@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>FinFlow — Управление финансами</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #0a0e1a; 
+      color: #f1f5f9; 
+      overflow-x: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .app { display: flex; flex-direction: column; height: 100vh; }
+    .header { 
+      background: #111827; 
+      padding: 12px 16px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      border-bottom: 1px solid #2d3a52;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .logo { font-size: 20px; }
+    .app-name { font-size: 18px; font-weight: 700; }
+    .logout-btn { 
+      background: rgba(239, 68, 68, 0.2); 
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444; 
+      padding: 6px 12px; 
+      border-radius: 16px; 
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tabs { 
+      display: flex; 
+      gap: 6px; 
+      padding: 10px 16px; 
+      overflow-x: auto; 
+      background: #0a0e1a;
+      border-bottom: 1px solid #2d3a52;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { 
+      padding: 8px 14px; 
+      border-radius: 20px; 
+      white-space: nowrap;
+      font-size: 13px;
+      background: transparent;
+      color: #94a3b8;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .tab.active { 
+      background: rgba(34, 197, 94, 0.15); 
+      color: #22c55e; 
+      border-color: rgba(34, 197, 94, 0.3);
+      font-weight: 600;
+    }
+    .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
+    .balance { text-align: center; margin-bottom: 20px; }
+    .balance-label { font-size: 13px; color: #64748b; margin-bottom: 4px; }
+    .balance-value { font-size: 36px; font-weight: 800; }
+    .stats { display: flex; gap: 10px; margin-bottom: 20px; }
+    .stat-card { 
+      flex: 1; 
+      background: #111827; 
+      border-radius: 14px; 
+      padding: 14px;
+      border: 1px solid #2d3a52;
+    }
+    .stat-label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+    .stat-value { font-size: 20px; font-weight: 700; }
+    .section-title { font-size: 14px; font-weight: 600; color: #94a3b8; margin: 20px 0 10px; }
+    .card { 
+      background: #111827; 
+      border-radius: 14px; 
+      padding: 14px; 
+      margin-bottom: 12px;
+      border: 1px solid #2d3a52;
+    }
+    .account-card { border-left: 4px solid; }
+    .account-name { font-size: 15px; font-weight: 600; }
+    .account-balance { font-size: 24px; font-weight: 800; margin-top: 4px; }
+    .tx-card { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      padding: 12px;
+    }
+    .tx-left { display: flex; align-items: center; gap: 12px; }
+    .tx-icon { font-size: 20px; }
+    .tx-category { font-size: 14px; font-weight: 500; }
+    .tx-date { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .tx-amount { font-size: 15px; font-weight: 700; }
+    .fab { 
+      position: fixed; 
+      bottom: 20px; 
+      right: 20px; 
+      width: 60px; 
+      height: 60px; 
+      border-radius: 30px; 
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+      cursor: pointer;
+      z-index: 1000;
+    }
+    .modal { 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(0,0,0,0.85); 
+      display: none; 
+      align-items: flex-end;
+      z-index: 2000;
+    }
+    .modal.show { display: flex; }
+    .modal-content { 
+      background: #111827; 
+      border-radius: 20px 20px 0 0; 
+      padding: 24px; 
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .input { 
+      width: 100%; 
+      background: #1e293b; 
+      border: 1px solid #2d3a52; 
+      border-radius: 10px; 
+      padding: 12px; 
+      color: #f1f5f9; 
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+    .btn { 
+      width: 100%; 
+      padding: 14px; 
+      border-radius: 10px; 
+      font-size: 16px; 
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .btn-primary { background: #22c55e; color: white; }
+    .btn-secondary { background: #1e293b; color: #94a3b8; border: 1px solid #2d3a52; }
+    .type-toggle { display: flex; gap: 10px; margin-bottom: 16px; }
+    .type-btn { 
+      flex: 1; 
+      padding: 12px; 
+      border-radius: 10px; 
+      background: #1e293b;
+      color: white;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .category-chips { 
+      display: flex; 
+      gap: 8px; 
+      margin-bottom: 16px; 
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .category-chips::-webkit-scrollbar { display: none; }
+    .category-chip { 
+      padding: 8px 12px; 
+      border-radius: 18px; 
+      background: #1e293b;
+      border: 1px solid #2d3a52;
+      white-space: nowrap;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .category-chip.active { 
+      background: rgba(34, 197, 94, 0.2); 
+      border-color: rgba(34, 197, 94, 0.4);
+      color: #22c55e;
+    }
+    .auth-screen { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+      padding: 20px;
+    }
+    .auth-card { 
+      background: #111827; 
+      border-radius: 20px; 
+      padding: 28px; 
+      max-width: 400px;
+      width: 100%;
+      border: 1px solid #2d3a52;
+    }
+    .auth-logo { 
+      width: 64px; 
+      height: 64px; 
+      border-radius: 18px; 
+      background: linear-gradient(135deg, #22c55e, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 14px;
+    }
+    .auth-title { font-size: 28px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+    .auth-subtitle { font-size: 14px; color: #64748b; text-align: center; margin-bottom: 24px; }
+    .mode-toggle { 
+      display: flex; 
+      background: #1e293b; 
+      border-radius: 10px; 
+      padding: 3px;
+      margin-bottom: 16px;
+    }
+    .mode-btn { 
+      flex: 1; 
+      padding: 10px; 
+      border-radius: 8px;
+      background: transparent;
+      color: #64748b;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .mode-btn.active { 
+      background: #111827; 
+      color: #f1f5f9; 
+      font-weight: 600;
+      border: 1px solid #2d3a52;
+    }
+    .error { color: #ef4444; font-size: 13px; margin-bottom: 10px; }
+    .empty { text-align: center; color: #64748b; padding: 30px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    const COLORS = {
+      green: '#22c55e',
+      red: '#ef4444',
+      blue: '#3b82f6',
+      purple: '#a855f7',
+    };
+
+    const CAT_ICONS = {
+      "Продукты": "🛒", "Транспорт": "🚗", "Развлечения": "🎮",
+      "Жильё": "🏠", "Здоровье": "🏥", "Образование": "📚",
+      "Одежда": "👕", "Другое": "📦",
+    };
+
+    const CATEGORIES = Object.keys(CAT_ICONS);
+
+    // App State
+    let user = null;
+    let accounts = [
+      { id: 1, name: 'Основная карта', balance: 0, color: COLORS.blue },
+      { id: 2, name: 'Наличные', balance: 0, color: COLORS.green },
+    ];
+    let transactions = [];
+    let currentTab = 'dashboard';
+
+    // Helpers
+    const fmt = (n) => (n || 0).toLocaleString('ru-RU');
+    const fmtCur = (n) => fmt(n) + ' сўм';
+    const today = () => new Date().toISOString().split('T')[0];
+
+    // Storage
+    const saveData = () => {
+      localStorage.setItem('finflow_accounts', JSON.stringify(accounts));
+      localStorage.setItem('finflow_transactions', JSON.stringify(transactions));
+    };
+
+    const loadData = () => {
+      const storedAccounts = localStorage.getItem('finflow_accounts');
+      const storedTx = localStorage.getItem('finflow_transactions');
+      if (storedAccounts) accounts = JSON.parse(storedAccounts);
+      if (storedTx) transactions = JSON.parse(storedTx);
+    };
+
+    // Auth
+    const checkAuth = () => {
+      const stored = localStorage.getItem('finflow_user');
+      user = stored ? JSON.parse(stored) : null;
+      render();
+    };
+
+    const login = (email, password, name) => {
+      user = { email, name: name || email.split('@')[0] };
+      localStorage.setItem('finflow_user', JSON.stringify(user));
+      loadData();
+      render();
+    };
+
+    const register = (email, password, name) => {
+      const users = JSON.parse(localStorage.getItem('finflow_users') || '{}');
+      if (users[email]) return 'Email уже зарегистрирован';
+      users[email] = { password, name: name || email.split('@')[0] };
+      localStorage.setItem('finflow_users', JSON.stringify(users));
+      login(email, password, name);
+      return null;
+    };
+
+    const loginCheck = (email, password) => {
+      const users = JSON.parse(localStorage.getItem('finflow_users') || '{}');
+      if (!users[email]) return 'Пользователь не найден';
+      if (users[email].password !== password) return 'Неверный пароль';
+      login(email, password, users[email].name);
+      return null;
+    };
+
+    const logout = () => {
+      localStorage.removeItem('finflow_user');
+      user = null;
+      render();
+    };
+
+    // Transactions
+    const addTransaction = (tx) => {
+      const newTx = { ...tx, id: Date.now() };
+      transactions.unshift(newTx);
+      accounts = accounts.map(a => 
+        a.id === tx.accountId 
+          ? { ...a, balance: a.balance + (tx.type === 'income' ? tx.amount : -tx.amount) }
+          : a
+      );
+      saveData();
+      render();
+    };
+
+    const deleteTransaction = (id) => {
+      const tx = transactions.find(t => t.id === id);
+      if (!tx || !confirm('Удалить транзакцию?')) return;
+      transactions = transactions.filter(t => t.id !== id);
+      accounts = accounts.map(a =>
+        a.id === tx.accountId
+          ? { ...a, balance: a.balance - (tx.type === 'income' ? tx.amount : -tx.amount) }
+          : a
+      );
+      saveData();
+      render();
+    };
+
+    // Stats
+    const getStats = () => {
+      const curMonth = new Date().getMonth() + 1;
+      const curYear = new Date().getFullYear();
+      const income = transactions
+        .filter(t => t.type === 'income' && new Date(t.date).getMonth() + 1 === curMonth && new Date(t.date).getFullYear() === curYear)
+        .reduce((s, t) => s + t.amount, 0);
+      const expense = transactions
+        .filter(t => t.type === 'expense' && new Date(t.date).getMonth() + 1 === curMonth && new Date(t.date).getFullYear() === curYear)
+        .reduce((s, t) => s + t.amount, 0);
+      const balance = accounts.reduce((s, a) => s + a.balance, 0);
+      return { income, expense, balance };
+    };
+
+    // Render
+    const render = () => {
+      const root = document.getElementById('root');
+      if (!user) {
+        root.innerHTML = renderAuthScreen();
+      } else {
+        root.innerHTML = renderApp();
+      }
+    };
+
+    const renderAuthScreen = () => `
+      <div class="auth-screen">
+        <div class="auth-card">
+          <div class="auth-logo">💰</div>
+          <div class="auth-title">FinFlow</div>
+          <div class="auth-subtitle">Управление финансами</div>
+          <div class="mode-toggle">
+            <button class="mode-btn active" onclick="switchAuthMode('login')">Войти</button>
+            <button class="mode-btn" onclick="switchAuthMode('register')">Регистрация</button>
+          </div>
+          <div id="auth-form"></div>
+        </div>
+      </div>
+    `;
+
+    const renderApp = () => {
+      const stats = getStats();
+      return `
+        <div class="app">
+          <div class="header">
+            <div class="header-left">
+              <div class="logo">💰</div>
+              <div class="app-name">FinFlow</div>
+            </div>
+            <button class="logout-btn" onclick="logout()">Выход</button>
+          </div>
+          <div class="tabs">
+            <button class="tab ${currentTab === 'dashboard' ? 'active' : ''}" onclick="switchTab('dashboard')">📊 Дашборд</button>
+            <button class="tab ${currentTab === 'transactions' ? 'active' : ''}" onclick="switchTab('transactions')">💳 Транзакции</button>
+            <button class="tab ${currentTab === 'accounts' ? 'active' : ''}" onclick="switchTab('accounts')">🏦 Счета</button>
+          </div>
+          <div class="content" id="content">
+            ${renderContent(stats)}
+          </div>
+          <div class="fab" onclick="showAddTxModal()">+</div>
+        </div>
+      `;
+    };
+
+    const renderContent = (stats) => {
+      if (currentTab === 'dashboard') return renderDashboard(stats);
+      if (currentTab === 'transactions') return renderTransactions();
+      if (currentTab === 'accounts') return renderAccounts();
+      return '';
+    };
+
+    const renderDashboard = (stats) => `
+      <div class="balance">
+        <div class="balance-label">Общий баланс</div>
+        <div class="balance-value">${fmtCur(stats.balance)}</div>
+      </div>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">Доход</div>
+          <div class="stat-value" style="color: ${COLORS.green}">${fmtCur(stats.income)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Расход</div>
+          <div class="stat-value" style="color: ${COLORS.red}">${fmtCur(stats.expense)}</div>
+        </div>
+      </div>
+      <div class="section-title">Счета</div>
+      ${accounts.map(a => `
+        <div class="card account-card" style="border-left-color: ${a.color}">
+          <div class="account-name">${a.name}</div>
+          <div class="account-balance" style="color: ${a.color}">${fmtCur(a.balance)}</div>
+        </div>
+      `).join('')}
+      <div class="section-title">Последние транзакции</div>
+      ${transactions.slice(0, 5).map(t => `
+        <div class="card tx-card">
+          <div class="tx-left">
+            <div class="tx-icon">${CAT_ICONS[t.category]}</div>
+            <div>
+              <div class="tx-category">${t.category}</div>
+              <div class="tx-date">${t.date}</div>
+            </div>
+          </div>
+          <div class="tx-amount" style="color: ${t.type === 'income' ? COLORS.green : COLORS.red}">
+            ${t.type === 'income' ? '+' : '−'}${fmtCur(t.amount)}
+          </div>
+        </div>
+      `).join('') || '<div class="empty">Нет транзакций</div>'}
+    `;
+
+    const renderTransactions = () => `
+      <div class="section-title">Все транзакции</div>
+      ${transactions.map(t => {
+        const acc = accounts.find(a => a.id === t.accountId);
+        return `
+          <div class="card tx-card" onclick="deleteTransaction(${t.id})">
+            <div class="tx-left">
+              <div class="tx-icon">${CAT_ICONS[t.category]}</div>
+              <div>
+                <div class="tx-category">${t.category}</div>
+                <div class="tx-date">${acc?.name} • ${t.date}</div>
+              </div>
+            </div>
+            <div class="tx-amount" style="color: ${t.type === 'income' ? COLORS.green : COLORS.red}">
+              ${t.type === 'income' ? '+' : '−'}${fmtCur(t.amount)}
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="empty">Нет транзакций</div>'}
+      ${transactions.length > 0 ? '<div style="text-align:center;color:#64748b;font-size:11px;margin-top:10px">Нажмите для удаления</div>' : ''}
+    `;
+
+    const renderAccounts = () => `
+      <div class="section-title">Мои счета</div>
+      ${accounts.map(a => {
+        const inc = transactions.filter(t => t.accountId === a.id && t.type === 'income').reduce((s, t) => s + t.amount, 0);
+        const exp = transactions.filter(t => t.accountId === a.id && t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+        return `
+          <div class="card account-card" style="border-left-color: ${a.color}">
+            <div class="account-name">${a.name}</div>
+            <div class="account-balance" style="color: ${a.color}">${fmtCur(a.balance)}</div>
+            <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:#94a3b8">
+              <div><span style="color:${COLORS.green}">+${fmtCur(inc)}</span> доход</div>
+              <div><span style="color:${COLORS.red}">−${fmtCur(exp)}</span> расход</div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+
+    // Modal
+    const showAddTxModal = () => {
+      const modal = document.createElement('div');
+      modal.className = 'modal show';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-title">Новая транзакция</div>
+          <div class="type-toggle">
+            <button class="type-btn" style="background: ${COLORS.red}" onclick="setTxType('expense')">📤 Расход</button>
+            <button class="type-btn" style="background: ${COLORS.green}" onclick="setTxType('income')">📥 Доход</button>
+          </div>
+          <input type="number" class="input" id="tx-amount" placeholder="Сумма" />
+          <div class="category-chips" id="categories">
+            ${CATEGORIES.map(c => `
+              <div class="category-chip" onclick="selectCategory('${c}')">${CAT_ICONS[c]} ${c}</div>
+            `).join('')}
+          </div>
+          <button class="btn btn-primary" onclick="submitTransaction()">Добавить</button>
+          <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      window.txData = { type: 'expense', category: CATEGORIES[0], accountId: accounts[0].id };
+    };
+
+    window.setTxType = (type) => { window.txData.type = type; };
+    window.selectCategory = (cat) => {
+      window.txData.category = cat;
+      document.querySelectorAll('.category-chip').forEach(el => el.classList.remove('active'));
+      event.target.classList.add('active');
+    };
+    
+    window.submitTransaction = () => {
+      const amount = parseFloat(document.getElementById('tx-amount').value);
+      if (!amount) return alert('Введите сумму');
+      addTransaction({ ...window.txData, amount, date: today() });
+      closeModal();
+    };
+
+    window.closeModal = () => {
+      document.querySelector('.modal')?.remove();
+    };
+
+    window.switchTab = (tab) => {
+      currentTab = tab;
+      render();
+    };
+
+    let authMode = 'login';
+    window.switchAuthMode = (mode) => {
+      authMode = mode;
+      document.querySelectorAll('.mode-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', (mode === 'login' && i === 0) || (mode === 'register' && i === 1));
+      });
+      renderAuthForm();
+    };
+
+    const renderAuthForm = () => {
+      const form = document.getElementById('auth-form');
+      if (!form) return;
+      form.innerHTML = `
+        ${authMode === 'register' ? '<input type="text" class="input" id="auth-name" placeholder="Имя" />' : ''}
+        <input type="email" class="input" id="auth-email" placeholder="Email" />
+        <input type="password" class="input" id="auth-password" placeholder="Пароль" />
+        <div class="error" id="auth-error"></div>
+        <button class="btn btn-primary" onclick="submitAuth()">
+          ${authMode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+        </button>
+      `;
+    };
+
+    window.submitAuth = () => {
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      const name = document.getElementById('auth-name')?.value;
+      
+      if (!email || !password) {
+        document.getElementById('auth-error').textContent = 'Заполните все поля';
+        return;
+      }
+
+      let error;
+      if (authMode === 'register') {
+        error = register(email, password, name);
+      } else {
+        error = loginCheck(email, password);
+      }
+
+      if (error) {
+        document.getElementById('auth-error').textContent = error;
+      }
+    };
+
+    // Init
+    checkAuth();
+    if (user) loadData();
+    setTimeout(renderAuthForm, 0);
+  </script>
+</body>
+</html>
