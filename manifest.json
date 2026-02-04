@@ -1,24 +1,29 @@
 {
   "name": "FinFlow — Управление финансами",
   "short_name": "FinFlow",
-  "description": "Приложение для управления личными финансами",
-  "start_url": "/",
+  "description": "Мобильное приложение для управления личными финансами",
+  "start_url": "/finance-Apk/",
+  "scope": "/finance-Apk/",
   "display": "standalone",
   "background_color": "#0a0e1a",
   "theme_color": "#0a0e1a",
   "orientation": "portrait",
+  "dir": "ltr",
+  "lang": "ru",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/finance-Apk/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "/finance-Apk/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["finance", "productivity"],
+  "screenshots": []
 }
